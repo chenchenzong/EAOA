@@ -1,4 +1,6 @@
+# Official Implementation of CVPR'25 paper "Rethinking Epistemic and Aleatoric Uncertainty for Active Open-Set Annotation: An Energy-Based Approach"
 
+by **Chen-Chen Zong, Sheng-Jun Huang**
 
 ## Run 
 ### CIFAR-10
