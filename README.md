@@ -57,3 +57,7 @@ If you find this repo useful for your research, please consider citing the paper
       url={https://arxiv.org/abs/2502.19691}, 
 }
 ```
+
+## Acknowledgement
+
+Thanks to Safaei et al. for publishing their code for [EOAL](https://github.com/bardisafa/EOAL). Our implementation is heavily based on their work.
