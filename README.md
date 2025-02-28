@@ -2,7 +2,7 @@
 
 by **Chen-Chen Zong, Sheng-Jun Huang**
 
-[[Main paper]](https://arxiv.org/abs/2502.19691)
+[[Paper link]](https://arxiv.org/abs/2502.19691)
 
 ## Abstract
 
