@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import numpy as np
-from utils import open_entropy, lab_conv
+from utils import lab_conv
 from sklearn.mixture import GaussianMixture
 import torch.nn.functional as F
 import math
