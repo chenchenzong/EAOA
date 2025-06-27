@@ -2,7 +2,7 @@
 
 by **Chen-Chen Zong, Sheng-Jun Huang**
 
-[[Paper link]](https://arxiv.org/abs/2502.19691)
+[[Paper link]](https://openaccess.thecvf.com/content/CVPR2025/html/Zong_Rethinking_Epistemic_and_Aleatoric_Uncertainty_for_Active_Open-Set_Annotation_An_CVPR_2025_paper.html)
 
 ## Abstract
 
