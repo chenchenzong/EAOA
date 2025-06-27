@@ -37,10 +37,7 @@ def eaoa_sampling(args, unlabeledloader, Len_labeled_ind_train, model, model_ID,
         eval_trainloader = trainloader_ID_w_OOD
 
     labelArr_all = []
-    if args.dataset == 'tinyimagenet':
-        feat_all = torch.zeros([1, 4 * 128]).cuda()
-    else:
-        feat_all = torch.zeros([1, 128]).cuda()
+    feat_all = torch.zeros([1, 128]).cuda()
     for batch_idx, (index, (data, labels)) in enumerate(eval_trainloader):
         labels = lab_conv(knownclass, labels)
         if use_gpu:
@@ -57,10 +54,7 @@ def eaoa_sampling(args, unlabeledloader, Len_labeled_ind_train, model, model_ID,
     uncertaintyArr = []
     aleatoricUncArr = []
     precision, recall = 0, 0
-    if args.dataset == 'tinyimagenet':
-        feat_unlab = torch.zeros([1, 4 * 128]).cuda()
-    else:
-        feat_unlab = torch.zeros([1, 128]).cuda()
+    feat_unlab = torch.zeros([1, 128]).cuda()
     for batch_idx, (index, (data, labels)) in enumerate(unlabeledloader):
         labels = lab_conv(knownclass, labels)
         if use_gpu:
@@ -113,25 +107,19 @@ def eaoa_sampling(args, unlabeledloader, Len_labeled_ind_train, model, model_ID,
     _, top_k_index = dists_all.topk(250, dim=1, largest=True, sorted=True) ## Top-K similar scores and corresponding indexes
     dists_all, top_k_index = dists_all.cpu(), top_k_index.cpu()
     rknn_logits = torch.zeros(feat_unlab.shape[0], len(knownclass)+1, dtype=torch.long)
-    
-    label_tensor = torch.as_tensor(labelArr_all, dtype=torch.long, device=top_k_index.device)
+
+    for i in range(len(knownclass)):
+        unique_indices, counts = torch.unique(top_k_index[torch.tensor(labelArr_all)==i], return_counts=True)
+        rknn_logits[unique_indices,i] = counts
+
     if trainloader_ID_w_OOD != None:
-        for i in range(len(knownclass)+1):
-            mask = label_tensor == i
-            unique_indices, counts = torch.unique(top_k_index[mask, :], return_counts=True)
-            rknn_logits[unique_indices,i] = counts
-        rknn_logits = rknn_logits.float()
+        unique_indices, counts = torch.unique(top_k_index[labelArr_all==len(knownclass)], return_counts=True)
+        rknn_logits[unique_indices,len(knownclass)] = counts
         energy = -torch.logsumexp(rknn_logits.float()[:,:-1], dim=1) + torch.log(1+torch.exp(rknn_logits.float()[:,-1]))
     else:
-        for i in range(len(knownclass)):
-            mask = label_tensor == i
-            unique_indices, counts = torch.unique(top_k_index[mask, :], return_counts=True)
-            rknn_logits[unique_indices,i] = counts
-        rknn_logits = rknn_logits.float()
         energy = -torch.logsumexp(rknn_logits.float()[:,:-1], dim=1)
-    energy = torch.nan_to_num(energy, nan=0.0, posinf=0.0, neginf=0.0)
     Uncertainty = energy
-    uncertaintyArr = list(Uncertainty.cpu().detach().numpy())  
+    uncertaintyArr = list(Uncertainty.cpu().detach().numpy()) 
 
     uncertaintyArr = np.asarray(uncertaintyArr)
     input_uncertaintyArr = (uncertaintyArr-uncertaintyArr.min())/(uncertaintyArr.max()-uncertaintyArr.min())
