@@ -112,12 +112,7 @@ def eaoa_sampling(args, unlabeledloader, Len_labeled_ind_train, model, model_ID,
         unique_indices, counts = torch.unique(top_k_index[torch.tensor(labelArr_all)==i], return_counts=True)
         rknn_logits[unique_indices,i] = counts
 
-    if trainloader_ID_w_OOD != None:
-        unique_indices, counts = torch.unique(top_k_index[labelArr_all==len(knownclass)], return_counts=True)
-        rknn_logits[unique_indices,len(knownclass)] = counts
-        energy = -torch.logsumexp(rknn_logits.float()[:,:-1], dim=1) + torch.log(1+torch.exp(rknn_logits.float()[:,-1]))
-    else:
-        energy = -torch.logsumexp(rknn_logits.float()[:,:-1], dim=1)
+    energy = -torch.logsumexp(rknn_logits.float()[:,:-1], dim=1)
     Uncertainty = energy
     uncertaintyArr = list(Uncertainty.cpu().detach().numpy()) 
 
