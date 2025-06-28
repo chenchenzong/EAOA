@@ -107,14 +107,18 @@ def eaoa_sampling(args, unlabeledloader, Len_labeled_ind_train, model, model_ID,
     _, top_k_index = dists_all.topk(250, dim=1, largest=True, sorted=True) ## Top-K similar scores and corresponding indexes
     dists_all, top_k_index = dists_all.cpu(), top_k_index.cpu()
     rknn_logits = torch.zeros(feat_unlab.shape[0], len(knownclass)+1, dtype=torch.long)
-
     for i in range(len(knownclass)):
-        unique_indices, counts = torch.unique(top_k_index[torch.tensor(labelArr_all)==i], return_counts=True)
+        unique_indices, counts = torch.unique(top_k_index[np.asarray(labelArr_all)==i], return_counts=True)
         rknn_logits[unique_indices,i] = counts
 
-    energy = -torch.logsumexp(rknn_logits.float()[:,:-1], dim=1)
+    if trainloader_ID_w_OOD != None:
+        unique_indices, counts = torch.unique(top_k_index[labelArr_all==len(knownclass)], return_counts=True)
+        rknn_logits[unique_indices,len(knownclass)] = counts
+        energy = -torch.logsumexp(rknn_logits.float()[:,:-1], dim=1) + torch.log(1+torch.exp(rknn_logits.float()[:,-1]))
+    else:
+        energy = -torch.logsumexp(rknn_logits.float()[:,:-1], dim=1)
     Uncertainty = energy
-    uncertaintyArr = list(Uncertainty.cpu().detach().numpy()) 
+    uncertaintyArr = list(Uncertainty.cpu().detach().numpy())
 
     uncertaintyArr = np.asarray(uncertaintyArr)
     input_uncertaintyArr = (uncertaintyArr-uncertaintyArr.min())/(uncertaintyArr.max()-uncertaintyArr.min())
