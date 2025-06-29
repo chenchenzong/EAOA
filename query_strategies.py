@@ -107,16 +107,28 @@ def eaoa_sampling(args, unlabeledloader, Len_labeled_ind_train, model, model_ID,
     _, top_k_index = dists_all.topk(250, dim=1, largest=True, sorted=True) ## Top-K similar scores and corresponding indexes
     dists_all, top_k_index = dists_all.cpu(), top_k_index.cpu()
     rknn_logits = torch.zeros(feat_unlab.shape[0], len(knownclass)+1, dtype=torch.long)
-    for i in range(len(knownclass)):
-        unique_indices, counts = torch.unique(top_k_index[np.asarray(labelArr_all)==i], return_counts=True)
-        rknn_logits[unique_indices,i] = counts
-
+    
+    label_tensor = torch.as_tensor(labelArr_all, dtype=torch.long, device=top_k_index.device)
     if trainloader_ID_w_OOD != None:
-        unique_indices, counts = torch.unique(top_k_index[labelArr_all==len(knownclass)], return_counts=True)
-        rknn_logits[unique_indices,len(knownclass)] = counts
-        energy = -torch.logsumexp(rknn_logits.float()[:,:-1], dim=1) + torch.log(1+torch.exp(rknn_logits.float()[:,-1]))
+        class_count = [0. for i in range(len(knownclass)+1)]
+        for i in range(len(knownclass)+1):
+            mask = label_tensor == i
+            class_count[i] = mask.sum()
+            unique_indices, counts = torch.unique(top_k_index[mask, :], return_counts=True)
+            rknn_logits[unique_indices,i] = counts
+        class_weight = torch.tensor(class_count/np.mean(class_count[:-1])) #.reshape(1, -1)
+        rknn_logits = rknn_logits.float()/class_weight
+        energy = -torch.logsumexp(rknn_logits[:,:-1], dim=1) + torch.log(1+torch.exp(rknn_logits[:,-1]))
     else:
-        energy = -torch.logsumexp(rknn_logits.float()[:,:-1], dim=1)
+        class_count = [0. for i in range(len(knownclass)+1)]
+        for i in range(len(knownclass)):
+            mask = label_tensor == i
+            class_count[i] = mask.sum()
+            unique_indices, counts = torch.unique(top_k_index[mask, :], return_counts=True)
+            rknn_logits[unique_indices,i] = counts
+        class_weight = torch.tensor(class_count/np.mean(class_count)) #.reshape(1, -1)
+        rknn_logits = rknn_logits.float()/class_weight
+        energy = -torch.logsumexp(rknn_logits[:,:-1], dim=1)
     Uncertainty = energy
     uncertaintyArr = list(Uncertainty.cpu().detach().numpy())
 
